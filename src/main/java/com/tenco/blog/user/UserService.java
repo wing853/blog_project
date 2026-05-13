@@ -1,6 +1,7 @@
 package com.tenco.blog.user;
 
 import com.tenco.blog._core.errors.Exception400;
+import com.tenco.blog._core.errors.Exception403;
 import com.tenco.blog._core.errors.Exception404;
 import com.tenco.blog._core.errors.Exception500;
 import com.tenco.blog._core.util.FileUtil;
@@ -106,10 +107,22 @@ public class UserService {
         return userEntity;
     }
 
+    @Transactional
     public User 프로필이미지삭제(Integer id) {
         User userEntity = userRepository.findById(id).orElseThrow(
                 () -> new Exception404("사용자를 찾을 수 없습니다")
         );
+
+        if(userEntity.getId().equals(id)==false) {
+            throw new Exception403("프로필 이미지 삭제 권한 없음");
+        }
+
+        String profileImage = userEntity.getProfileImage();
+        if(profileImage != null && profileImage.isEmpty()) {
+            // 내 서버 컴퓨터에 저장된 파일 삭제
+        }
+        // todo- userEntity = null 처리
+        return userEntity;
     }
 }
 

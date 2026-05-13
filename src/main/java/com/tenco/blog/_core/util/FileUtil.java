@@ -52,6 +52,7 @@ public class FileUtil {
         return savedFilename;
     }
     // 파일 삭제 기능
+    public static void deleteFile(String fileName, String upload)
 
     // 편의 기능(이미지 파일이 맞는지 확인)
     public static boolean isImageFile(MultipartFile file) {
