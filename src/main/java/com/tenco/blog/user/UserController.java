@@ -21,7 +21,7 @@ public class UserController {
     // 마이페이지 요청 화면
     @GetMapping("/user/detail")
     public String detailPage(Model model, HttpSession session) {
-        User sessionUser = (User) session.getAttribute("sessionUser");
+        User sessionUser = (User) session.getAttribute(Define.SESSION_USER);
         model.addAttribute("user",sessionUser);
         return "user/detail";
     }
@@ -94,7 +94,8 @@ public class UserController {
         User sessionUser = (User) session.getAttribute(Define.SESSION_USER);
         User updateUser = userService.프로필이미지삭제(sessionUser.getId());
 
-
+        // 세션에 저장되어 있던 프로필이미지를 삭제후 세션 동기화 처리
+        session.setAttribute(Define.SESSION_USER,updateUser);
         return "redirect:/user/detail";
     }
 }

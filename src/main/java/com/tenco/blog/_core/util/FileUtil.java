@@ -18,7 +18,7 @@ public class FileUtil {
     // 파일 저장 기능
     public static String saveFile(MultipartFile file, String uploadDir) throws IOException {
         // 파일 유효성 검사 - 파일이 없거나 크기가 0이면 오류
-        if(file == null || file.isEmpty()) {
+        if (file == null || file.isEmpty()) {
             return null; // 프로필 이미지 업로드는 선택사항
         }
 
@@ -28,14 +28,14 @@ public class FileUtil {
         Path uploadPath = Paths.get(IMAGES_DIR);
 
         // Files.exists(): 파일/디렉토리 존재 여부 확인
-        if(Files.exists(uploadPath) == false) {
+        if (Files.exists(uploadPath) == false) {
             // 현재 서버 컴퓨터에 images/* 없는 상태
             Files.createDirectories(uploadPath); // 상위 폴더까지 자동 생성 해 줌
         }
 
         // 원본 파일명 가져오기
         String originalFilename = file.getOriginalFilename();
-        if(originalFilename == null || originalFilename.isBlank()) {
+        if (originalFilename == null || originalFilename.isBlank()) {
             throw new Exception400("파일 명이 없습니다.");
         }
 
@@ -47,12 +47,23 @@ public class FileUtil {
         // 1. 파일 폴더 경로 + 재생성한 파일이름 -> 정확한 위치에 파일이 생성
         Path filePath = uploadPath.resolve(savedFilename);
 
-        Files.copy(file.getInputStream(),filePath);
+        Files.copy(file.getInputStream(), filePath);
 
         return savedFilename;
     }
+
     // 파일 삭제 기능
-    public static void deleteFile(String fileName, String upload)
+    public static void deleteFile(String fileName, String uploadDir) throws IOException {
+        if (fileName == null || fileName.isEmpty()) {
+            return;
+        }
+
+        Path filePath = Paths.get(uploadDir, fileName);
+        if (Files.exists(filePath)) {
+            // 정확한 폴더 경로 존재 확인, 파일명 기준으로 파일이 존재한다면
+            Files.delete(filePath);
+        }
+    }
 
     // 편의 기능(이미지 파일이 맞는지 확인)
     public static boolean isImageFile(MultipartFile file) {

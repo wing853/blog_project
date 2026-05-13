@@ -118,10 +118,17 @@ public class UserService {
         }
 
         String profileImage = userEntity.getProfileImage();
-        if(profileImage != null && profileImage.isEmpty()) {
+        if(profileImage != null && !profileImage.isEmpty()) {
             // 내 서버 컴퓨터에 저장된 파일 삭제
+            try {
+                FileUtil.deleteFile(profileImage,FileUtil.IMAGES_DIR);
+            } catch (IOException e) {
+                System.err.println("프로필 이미지 삭제시 오류 발생 " + e.getMessage());
+            }
         }
-        // todo- userEntity = null 처리
+        // 1차 캐쉬에 저장된 User정보 수정 - 트랜잭션이 종료 되면 반영(더티체킹)
+        userEntity.setProfileImage(null);
+
         return userEntity;
     }
 }
