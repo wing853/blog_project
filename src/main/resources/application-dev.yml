@@ -41,7 +41,8 @@ spring:
   # SQL 초기화 설정
   sql:
     init:
-      #mode: none  # 외부 DB(MySQL)에서도 실행되도록 설정
+      #mode: always  # 외부 DB(MySQL)에서도 실행되도록 설정
+      mode: never  # 외부 DB(MySQL)에서도 실행되도록 설정
       data-locations:
         - classpath:db/data.sql
 

@@ -13,7 +13,12 @@ import java.util.UUID;
 public class FileUtil {
 
     // 업로드 될 파일 경로를 미리 상수로 지정
-    public static final String IMAGES_DIR = "C:\\upload";
+    // System.getProperty("user.home)을 사용해서 사용자 home을 동적으로 설정해서 가져옴
+    // window: C:/users/사용자명/blog_uploads
+    // Mac: /users/사용자명/blog_uploads
+    // Linux:
+    public static final String IMAGES_DIR = Paths.get(System
+                    .getProperty("user.home"),"blog_uploads").toString();
 
     // 파일 저장 기능
     public static String saveFile(MultipartFile file, String uploadDir) throws IOException {
