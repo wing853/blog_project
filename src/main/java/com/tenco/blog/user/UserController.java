@@ -26,11 +26,17 @@ public class UserController {
         return "user/detail";
     }
 
-    // 프로필 수정 기능 요청
+    // 회원정보 수정 기능 요청
     @PostMapping("/user/update")
     public String updateProc(UserRequest.UpdateDTO updateDTO, HttpSession session) {
+        User sessionUser = (User) session.getAttribute(Define.SESSION_USER);
+
+        // 회원 정보 수정 요청시 기본 비밀번호 null이고 프로필 이미지만 수정 요청
+        if(updateDTO.getPassword() == null || updateDTO.getPassword().isBlank()) {
+            updateDTO.setPassword(sessionUser.getPassword());
+        }
+
         updateDTO.validate();
-        User sessionUser = (User) session.getAttribute("sessionUser");
         User updateUser = userService.회원정보수정(sessionUser.getId(), updateDTO);
         session.setAttribute("sessionUser", updateUser);
         return "redirect:/";

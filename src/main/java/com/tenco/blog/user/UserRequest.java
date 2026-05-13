@@ -1,5 +1,6 @@
 package com.tenco.blog.user;
 
+import lombok.Builder;
 import lombok.Data;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -72,6 +73,7 @@ public class UserRequest {
     public static class UpdateDTO {
 
         private String password;
+        private MultipartFile profileImage;
 
         public void validate() {
             if(password == null || password.isBlank()) {
