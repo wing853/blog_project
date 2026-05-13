@@ -2,10 +2,14 @@ package com.tenco.blog.user;
 
 import com.tenco.blog._core.errors.Exception400;
 import com.tenco.blog._core.errors.Exception404;
+import com.tenco.blog._core.errors.Exception500;
+import com.tenco.blog._core.util.FileUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.io.IOException;
 
 /**
  * User 관련 비즈니스 로직을 처리하는 Service 계층
@@ -32,7 +36,25 @@ public class UserService {
             log.warn("회원가입 실패 - 중복된 사용자명 : {}", user.getUsername());
             throw new Exception400("이미 존재하는 사용자 이름입니다");
         });
-        User user = joinDTO.toEntity();
+
+        // 프로필 이미지 저장 기능 구현(선택사항)
+        String profileImageFilename = null;
+        if(joinDTO.getProfileImage() != null && joinDTO.getProfileImage().isEmpty() == false){
+            // 이미지 파일이 맞는지 검증
+
+            try {
+                if(FileUtil.isImageFile(joinDTO.getProfileImage())==false) {
+                    throw new Exception400("이미지 파일만 업로드 가능합니다.");
+                }
+
+                profileImageFilename = FileUtil.saveFile(joinDTO.getProfileImage(), FileUtil.IMAGES_DIR);
+            } catch (IOException e) {
+                // 디스크 공간 없거나 권한이 없을때
+                throw new Exception500("프로필 이미지 저장 실패");
+            }
+        }
+
+        User user = joinDTO.toEntity(profileImageFilename);
 
         return userRepository.save(user);
     }
@@ -82,6 +104,12 @@ public class UserService {
         // 더티 체킹 활용
         userEntity.update(updateDTO);
         return userEntity;
+    }
+
+    public User 프로필이미지삭제(Integer id) {
+        User userEntity = userRepository.findById(id).orElseThrow(
+                () -> new Exception404("사용자를 찾을 수 없습니다")
+        );
     }
 }
 

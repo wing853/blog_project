@@ -1,5 +1,6 @@
 package com.tenco.blog.user;
 
+import com.tenco.blog._core.util.Define;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -8,12 +9,22 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 
+import java.io.IOException;
+
 @Slf4j
 @Controller // IoC
 @RequiredArgsConstructor // DI 처리
 public class UserController {
 
     private final UserService userService;
+
+    // 마이페이지 요청 화면
+    @GetMapping("/user/detail")
+    public String detailPage(Model model, HttpSession session) {
+        User sessionUser = (User) session.getAttribute("sessionUser");
+        model.addAttribute("user",sessionUser);
+        return "user/detail";
+    }
 
     // 프로필 수정 기능 요청
     @PostMapping("/user/update")
@@ -70,11 +81,20 @@ public class UserController {
     // 회원 가입 기능 요청
     // 주소 설계 - http://localhost:8080/join
     @PostMapping("/join")
-    public String joinProc(UserRequest.JoinDTO joinDTO) {
+    public String joinProc(UserRequest.JoinDTO joinDTO) throws IOException {
         //  인증검사 x, 유효성 검사 하기 o
+
         joinDTO.validate();
         userService.회원가입(joinDTO);
         return "redirect:/login-form";
     }
 
+    @PostMapping("/user/profile-image/delete")
+    public String deleteProfileImage(HttpSession session) {
+        User sessionUser = (User) session.getAttribute(Define.SESSION_USER);
+        User updateUser = userService.프로필이미지삭제(sessionUser.getId());
+
+
+        return "redirect:/user/detail";
+    }
 }

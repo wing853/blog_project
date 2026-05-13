@@ -1,6 +1,7 @@
 package com.tenco.blog.user;
 
 import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
 
 public class UserRequest {
 
@@ -29,11 +30,18 @@ public class UserRequest {
         private String password;
         private String email;
 
+        /**
+         * 프로필 이미지(선택사항, null이 될 수 있음)
+         * MultipartFile: Spring에서 제공해주고 있는 파일 업로드를 처리하기 위한 인터페이스
+         */
+        private MultipartFile profileImage;
+
         // 편의 기능 추가 - 내가 가지고 있는 멤버 변수에 값으로 User 엔티를 생성
-        public User toEntity() {
+        public User toEntity(String profileImage) {
             return User.builder()
                     .username(username)
                     .password(password)
+                    .profileImage(profileImage)
                     .email(email)
                     .build();
         }
