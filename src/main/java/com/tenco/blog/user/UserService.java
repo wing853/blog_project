@@ -34,29 +34,32 @@ public class UserService {
     public User 회원가입(UserRequest.JoinDTO joinDTO) {
         log.info("회원가입 서비스 시작");
 
+        // 회원가입시 사용자 이름 중복 체크
         userRepository.findByUsername(joinDTO.getUsername()).ifPresent(user -> {
             log.warn("회원가입 실패 - 중복된 사용자명 : {}", user.getUsername());
             throw new Exception400("이미 존재하는 사용자 이름입니다");
         });
 
-        // 프로필 이미지 저장 기능 구현(선택사항)
+
+        // 프로필 이미지 저장 기능 구현 (선택 사항 임)
         String profileImageFilename = null;
-        if (joinDTO.getProfileImage() != null && joinDTO.getProfileImage().isEmpty() == false) {
-            // 이미지 파일이 맞는지 검증
-
+        if(joinDTO.getProfileImage() != null && joinDTO.getProfileImage().isEmpty() == false) {
             try {
-                if (FileUtil.isImageFile(joinDTO.getProfileImage()) == false) {
-                    throw new Exception400("이미지 파일만 업로드 가능합니다.");
+                // 이미지 파일이 맞는지 검증
+                if(FileUtil.isImageFile(joinDTO.getProfileImage()) == false) {
+                    throw new Exception400("이미지 파일만 업로드 가능합니다");
                 }
-
                 profileImageFilename = FileUtil.saveFile(joinDTO.getProfileImage(), FileUtil.IMAGES_DIR);
-            } catch (IOException e) {
-                // 디스크 공간 없거나 권한이 없을때
+            } catch (Exception e) {
+                // 디스크 공간 없거나, 권한 없음
                 throw new Exception500("프로필 이미지 저장 실패");
             }
         }
-
+        // 코드 수정
         User user = joinDTO.toEntity(profileImageFilename);
+
+        // 기본 권한 추가 (일반 사용자로 설정)
+        user.addRole(Role.USER);
 
         return userRepository.save(user);
     }
@@ -69,7 +72,7 @@ public class UserService {
      */
     public User 로그인(UserRequest.LoginDTO loginDTO) {
         log.info("로그인 서비스 시작");
-        User userEntity = userRepository.findByUsernameAndPassword(loginDTO.getUsername(), loginDTO.getPassword())
+        User userEntity = userRepository.findByUsernameAndPasswordWithRoles(loginDTO.getUsername(), loginDTO.getPassword())
                 .orElseThrow(() -> {
                     log.warn("로그인 실패 - 사용자 이름 또는 사용자 비번 잘못 입력");
                     return new Exception400("사용자명 또는 비밀번호가 올바르지 않습니다");

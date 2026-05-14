@@ -6,6 +6,12 @@ INSERT INTO user_tb (username, password, email, created_at) VALUES
                                                                 ('hong', '1234', 'hong@naver.com', NOW()),
                                                                 ('kim', '1234', 'kim@daum.net', NOW());
 
+insert into user_role_tb(role,user_id)
+    values('ADMIN',1),('USER',1),
+	 ('USER',2),('USER',3),
+     ('USER',4),('USER',5);
+
+
 -- 2단계: Board 테이블 데이터 (10개의 게시글)
 -- 주의: user_id는 위에서 생성된 사용자의 id를 참조
 
@@ -98,3 +104,4 @@ INSERT INTO reply_tb (comment, board_id, user_id, created_at) VALUES
                                                                   ('가성비 좋은 곳 추천해주셔서 고마워요.', 10, 2, NOW()),
                                                                   ('저도 가봐야겠네요. 위치 정보도 알려주세요.', 10, 3, NOW()),
                                                                   ('점심 메뉴 추천도 해주시면 좋을 것 같아요.', 10, 4, NOW());
+
