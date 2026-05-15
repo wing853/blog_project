@@ -1,9 +1,12 @@
 package com.tenco.blog.user;
 
 import com.tenco.blog._core.util.Define;
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.aspectj.lang.annotation.Pointcut;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +20,19 @@ import java.io.IOException;
 public class UserController {
 
     private final UserService userService;
+
+    // 초기 파라미터 값을 가져오는 방법
+    @Value("${oauth.kakao.client-id}")
+    private String kakaoClientId;
+    @Value("${oauth.kakao.client-secret}")
+    private String kakaoClientSecret;
+
+    // 테스트 용 <- 서버가 실행되면 한번 이 메서드 호출
+    @PostConstruct
+    public void init() {
+        log.info("현재 적용된 클라이언트 아이디 확인: " + kakaoClientId);
+        log.info("현재 적용된 클라이언트 시크릿 확인: " + kakaoClientSecret);
+    }
 
     // 마이페이지 요청 화면
     @GetMapping("/user/detail")
