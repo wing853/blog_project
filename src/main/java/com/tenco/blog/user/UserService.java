@@ -67,11 +67,40 @@ public class UserService {
         System.out.println("rawPwd: " + joinDTO.getPassword());
         System.out.println("hashPwd:: " + hashPwd);
         user.setPassword(hashPwd);
+
+
         // 기본 권한 추가 (일반 사용자로 설정)
         user.addRole(Role.USER);
 
         return userRepository.save(user);
     }
+
+    @Transactional
+    public User 소셜회원가입(UserRequest.JoinDTO joinDTO, String profileImageUrl) {
+        log.info("소셜 회원가입 서비스 시작");
+
+        // 회원가입시 사용자 이름 중복 체크
+        userRepository.findByUsername(joinDTO.getUsername()).ifPresent(user -> {
+            log.warn("회원가입 실패 - 중복된 사용자명 : {}", user.getUsername());
+            throw new Exception400("이미 존재하는 사용자 이름입니다");
+        });
+
+
+
+
+        // 코드 수정
+        User user = joinDTO.toEntity(profileImageUrl);
+
+        String hashPwd = passwordEncoder.encode("1234");
+
+        user.setPassword(hashPwd);
+        // 기본 권한 추가 (일반 사용자로 설정)
+        user.addRole(Role.USER);
+        user.setOAuthProvider(OAuthProvider.KAKAO);
+
+        return userRepository.save(user);
+    }
+
 
     /**
      * 로그인 처리

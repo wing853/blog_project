@@ -113,10 +113,11 @@ public class UserController {
             UserRequest.JoinDTO joinDTO = new UserRequest.JoinDTO();
             joinDTO.setUsername(username);
             joinDTO.setEmail(null);
-            joinDTO.setPassword("aaaa");
-            //joinDTO.getProfileImage();
-            userEntity = userService.회원가입(joinDTO);
-            userEntity.setProfileImage(profile.getProfileImageUrl());
+            joinDTO.setPassword("1234");
+            joinDTO.getProfileImage();
+            userEntity = userService.소셜회원가입(joinDTO,profile.getProfileImageUrl());
+
+
         }
 
         session.setAttribute(Define.SESSION_USER,userEntity);
