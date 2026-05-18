@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.sql.Timestamp;
@@ -37,6 +38,11 @@ public class User {
     @JoinColumn(name = "user_id")
     private List<UserRole> roles = new ArrayList<>();
 
+    @Column(nullable = false)
+    @ColumnDefault("'LOCAL'") // 어노테이션으로 디폴트값 선언방법 문자열일경우 '' 반드시 사용
+    @Enumerated(EnumType.STRING)
+    private OAuthProvider oAuthProvider;
+
     @Builder
     public User(Integer id, String username, String password,
                 String email, Timestamp createdAt, String profileImage) {
@@ -66,7 +72,7 @@ public class User {
     // 해당 Role을 가지고있는지 여부 확인
     public boolean hasRole(Role role) {
         // 1. 방어적 코드 작성
-        if(this.roles == null || this.roles.isEmpty()) {
+        if (this.roles == null || this.roles.isEmpty()) {
             // Role 자체가 설정되지 않은 상태
             return false;
         }
@@ -84,8 +90,24 @@ public class User {
         return hasRole(Role.ADMIN);
     }
 
-    // Mustache 화면에서 사용할 편의 메서드
+    // Mustache 화면에서 사용할 편의 메서드 1
     public String getRoleDisplay() {
         return isAdmin() ? "ADMIN" : "USER";
+    }
+
+    // Mustache 화면에서 사용할 편의 메서드 2
+    // OAuthProvider 값에 따라서 경로 변수를 다르게 리턴
+    public String getProfilePath() {
+        if(this.profileImage == null) {
+            return null;
+        }
+
+        // 이미지 경로가 http로 시작(소셜가입)
+        if(this.profileImage.startsWith("http")) {
+            return this.getProfileImage();
+        }
+
+        // 로컬 이미지(서버 기준 경로)
+        return "/images/" + this.profileImage;
     }
 }
