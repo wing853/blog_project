@@ -7,6 +7,8 @@ import com.tenco.blog._core.errors.Exception500;
 import com.tenco.blog._core.util.FileUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +25,7 @@ import java.io.IOException;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     /**
      * 회원 가입 처리
@@ -43,10 +46,10 @@ public class UserService {
 
         // 프로필 이미지 저장 기능 구현 (선택 사항 임)
         String profileImageFilename = null;
-        if(joinDTO.getProfileImage() != null && joinDTO.getProfileImage().isEmpty() == false) {
+        if (joinDTO.getProfileImage() != null && joinDTO.getProfileImage().isEmpty() == false) {
             try {
                 // 이미지 파일이 맞는지 검증
-                if(FileUtil.isImageFile(joinDTO.getProfileImage()) == false) {
+                if (FileUtil.isImageFile(joinDTO.getProfileImage()) == false) {
                     throw new Exception400("이미지 파일만 업로드 가능합니다");
                 }
                 profileImageFilename = FileUtil.saveFile(joinDTO.getProfileImage(), FileUtil.IMAGES_DIR);
@@ -55,9 +58,15 @@ public class UserService {
                 throw new Exception500("프로필 이미지 저장 실패");
             }
         }
+
+
         // 코드 수정
         User user = joinDTO.toEntity(profileImageFilename);
 
+        String hashPwd = passwordEncoder.encode(joinDTO.getPassword());
+        System.out.println("rawPwd: " + joinDTO.getPassword());
+        System.out.println("hashPwd:: " + hashPwd);
+        user.setPassword(hashPwd);
         // 기본 권한 추가 (일반 사용자로 설정)
         user.addRole(Role.USER);
 
@@ -72,11 +81,18 @@ public class UserService {
      */
     public User 로그인(UserRequest.LoginDTO loginDTO) {
         log.info("로그인 서비스 시작");
-        User userEntity = userRepository.findByUsernameAndPasswordWithRoles(loginDTO.getUsername(), loginDTO.getPassword())
+
+        // 1. 사용자 계정 여부 확인
+        User userEntity = userRepository.findByUsernameWithRoles(loginDTO.getUsername())
                 .orElseThrow(() -> {
                     log.warn("로그인 실패 - 사용자 이름 또는 사용자 비번 잘못 입력");
                     return new Exception400("사용자명 또는 비밀번호가 올바르지 않습니다");
                 });
+
+        // 2. 암호화된 비밀번호 검증
+        if (!passwordEncoder.matches(loginDTO.getPassword(), userEntity.getPassword())) {
+           throw new Exception400("사용자 명 또는 비밀번호가 올바르지 않습니다.");
+        }
 
         return userEntity;
     }
@@ -120,7 +136,7 @@ public class UserService {
             String oldProfileImage = userEntity.getProfileImage();
 //            String newProfileImage = updateDTO.getProfileImage().getOriginalFilename();
 
-            if(!FileUtil.isImageFile(updateDTO.getProfileImage())) {
+            if (!FileUtil.isImageFile(updateDTO.getProfileImage())) {
                 throw new Exception400("이미니 파일만 업로드 가능합니다.");
             }
 
@@ -128,8 +144,8 @@ public class UserService {
             try {
                 uuidImageFilename = FileUtil.saveFile(updateDTO.getProfileImage(), FileUtil.IMAGES_DIR);
                 // 기존 이미지가 존재한다면 삭제
-                if(oldProfileImage != null) {
-                    FileUtil.deleteFile(oldProfileImage,FileUtil.IMAGES_DIR);
+                if (oldProfileImage != null) {
+                    FileUtil.deleteFile(oldProfileImage, FileUtil.IMAGES_DIR);
                 }
 
             } catch (IOException e) {
@@ -138,7 +154,7 @@ public class UserService {
         }
 
         // 더티 체킹 활용
-        userEntity.update(updateDTO,uuidImageFilename);
+        userEntity.update(updateDTO, uuidImageFilename);
         return userEntity;
     }
 
@@ -165,6 +181,10 @@ public class UserService {
         userEntity.setProfileImage(null);
 
         return userEntity;
+    }
+
+    public User 사용자이름조회(String username) {
+        return userRepository.findByUsername(username).orElse(null);
     }
 }
 

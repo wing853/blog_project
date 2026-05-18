@@ -1,10 +1,10 @@
 -- User 테이블 데이터 (5명의 사용자)
 INSERT INTO user_tb (username, password, email, created_at) VALUES
-                                                                ('admin', '1234', 'admin@blog.com', NOW()),
-                                                                ('ssar', '1234', 'ssar@nate.com', NOW()),
-                                                                ('cos', '1234', 'cos@gmail.com', NOW()),
-                                                                ('hong', '1234', 'hong@naver.com', NOW()),
-                                                                ('kim', '1234', 'kim@daum.net', NOW());
+                                                                ('admin', '$2a$10$FlU2mx5.AQ53vdcHdHFcSeEzi6aAtKxdsLFfCtoom9oWED2BfUI2a', 'admin@blog.com', NOW()),
+                                                                ('ssar', '$2a$10$o7VHHR2WXkRP1LKlBsdrSeNwW4X92CdDC0Z.fA9OVnjvfCkIkillO', 'ssar@nate.com', NOW()),
+                                                                ('cos', '$2a$10$amoXmmZ4NWe.Ov3VTQ3xv.Dqei8/zVV5SJZAdeuzDq9Am30FIxpgm', 'cos@gmail.com', NOW()),
+                                                                ('hong', '$2a$10$RvK/BuHWK3wC7GwcHBeGsupRWoP/.gv9R1sOGX26odsIzJvWBsp1O', 'hong@naver.com', NOW()),
+                                                                ('kim', '$2a$10$bXwhH.Xg/rKSD9yNIJhcPOXTjfwwOrD9Mup8/cp0FHYtJ3WlgSv3y', 'kim@daum.net', NOW());
 
 insert into user_role_tb(role,user_id)
     values('ADMIN',1),('USER',1),

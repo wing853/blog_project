@@ -7,10 +7,19 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.annotation.Pointcut;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 
@@ -34,11 +43,91 @@ public class UserController {
         log.info("현재 적용된 클라이언트 시크릿 확인: " + kakaoClientSecret);
     }
 
+    // 1. 인가 코드 받음 -> 2. 토큰 발급 요청(JWT - CRS)
+    @GetMapping("kakao-redirect")
+    public String kakaoCallback(@RequestParam(name = "code") String code, HttpSession session) {
+
+        RestTemplate restTemplate1 = new RestTemplate();
+
+        // 헤더
+        HttpHeaders headers1 = new HttpHeaders();
+        headers1.add("Content-Type", "application/x-www-form-urlencoded;charset=utf-8");
+
+        // 바디
+        // 1. 방식 - application/json
+        // 2. 방식 - application/x-www-form-urlencoded
+        LinkedMultiValueMap<String, String> multiValueMap = new LinkedMultiValueMap();
+        multiValueMap.add("grant_type", "authorization_code");
+        multiValueMap.add("client_id", kakaoClientId);
+        multiValueMap.add("redirect_uri", "http://localhost:8080/kakao-redirect");
+        multiValueMap.add("code", code);
+        // 최신 사항: 반드시 시크릿키 body 사용
+        multiValueMap.add("client_secret", kakaoClientSecret);
+
+        // 바디 + 헤더 결합(HTTP 요청 메세지 구축)
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity(multiValueMap, headers1);
+
+        ResponseEntity<UserResponse.OAuthToken> response1 = restTemplate1.exchange(
+                "https://kauth.kakao.com/oauth/token",
+                HttpMethod.POST,
+                request,
+                UserResponse.OAuthToken.class
+        );
+
+        System.out.println(response1.getBody().getAccessToken());
+        System.out.println(response1.getBody().getTokenType());
+
+        /// ////////////////////////////////////////////////
+        // 발급 받은 액세스 토큰으로 해당 사용자의 정보 요청
+        String accessToken = response1.getBody().getAccessToken();
+        RestTemplate restTemplate2 = new RestTemplate();
+
+        HttpHeaders headers2 = new HttpHeaders();
+        // 주의! 반드시 Bearer + 공백 한칸 + 토큰
+        headers2.add("Authorization", "Bearer " + accessToken);
+        headers2.add("Content-Type", "application/x-www-form-urlencoded;charset=utf-8");
+
+        HttpEntity request2 = new HttpEntity<>(headers2);
+
+        // HTTP 요청 2
+        ResponseEntity<UserResponse.KakaoProfile> response2 = restTemplate2.exchange(
+                "https://kapi.kakao.com/v2/user/me",
+                HttpMethod.POST,
+                request2,
+                UserResponse.KakaoProfile.class
+        );
+
+        System.out.println(response2.getStatusCode());
+        System.out.println(response2.getBody().toString());
+        System.out.println(response2.getHeaders());
+
+        // 소셜로그인 설계 방식
+        // 1. 최초 사용자라면 우리 서버에 회원 가입 처리
+        // 2. 회원 가입이 되어 있는 소셜 로그인 사용자라면 바로 로그인 처리
+        UserResponse.KakaoProfile.KakaoAccount.Profile profile = response2.getBody().getKakaoAccount().getProfile();
+        String username = profile.getNickname() + "_" + response2.getBody().getId();
+        User userEntity = userService.사용자이름조회(username);
+
+        if(userEntity == null) {
+            // 최초 사용자시 회원 자동 가입
+            UserRequest.JoinDTO joinDTO = new UserRequest.JoinDTO();
+            joinDTO.setUsername(username);
+            joinDTO.setEmail(null);
+            joinDTO.setPassword("aaaa");
+            //joinDTO.getProfileImage();
+            userEntity = userService.회원가입(joinDTO);
+            userEntity.setProfileImage(profile.getProfileImageUrl());
+        }
+
+        session.setAttribute(Define.SESSION_USER,userEntity);
+        return "redirect:/board/list";
+    }
+
     // 마이페이지 요청 화면
     @GetMapping("/user/detail")
     public String detailPage(Model model, HttpSession session) {
         User sessionUser = (User) session.getAttribute(Define.SESSION_USER);
-        model.addAttribute("user",sessionUser);
+        model.addAttribute("user", sessionUser);
         return "user/detail";
     }
 
@@ -48,7 +137,7 @@ public class UserController {
         User sessionUser = (User) session.getAttribute(Define.SESSION_USER);
 
         // 회원 정보 수정 요청시 기본 비밀번호 null이고 프로필 이미지만 수정 요청
-        if(updateDTO.getPassword() == null || updateDTO.getPassword().isBlank()) {
+        if (updateDTO.getPassword() == null || updateDTO.getPassword().isBlank()) {
             updateDTO.setPassword(sessionUser.getPassword());
         }
 
@@ -70,7 +159,9 @@ public class UserController {
     // 로그인 화면 요청
     // 주소 설계 - http://localhost:8080/login-form
     @GetMapping("/login-form")
-    public String loginFormPage() {
+    public String loginFormPage(Model model) {
+
+        model.addAttribute("clientId", kakaoClientId);
         return "user/login-form";
     }
 
@@ -117,7 +208,7 @@ public class UserController {
         User updateUser = userService.프로필이미지삭제(sessionUser.getId());
 
         // 세션에 저장되어 있던 프로필이미지를 삭제후 세션 동기화 처리
-        session.setAttribute(Define.SESSION_USER,updateUser);
+        session.setAttribute(Define.SESSION_USER, updateUser);
         return "redirect:/user/detail";
     }
 }
